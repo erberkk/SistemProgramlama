@@ -1,0 +1,810 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Enhanced Web File Explorer</title>
+
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+    rel="stylesheet"
+  />
+
+  <link
+    href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap"
+    rel="stylesheet"
+  />
+
+  <link
+    rel="stylesheet"
+    href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css"
+  />
+
+  <link
+    rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/default.min.css"
+  />
+
+  <link
+    href="https://cdn.jsdelivr.net/npm/select2@4.1.0-beta.1/dist/css/select2.min.css"
+    rel="stylesheet"
+  />
+
+  <style>
+    body {
+      font-family: "Roboto", sans-serif;
+      background: linear-gradient(to bottom right, #fdfdfd, #f0f0f0);
+      min-height: 100vh;
+      margin: 0;
+      padding: 0;
+    }
+
+    .page-header {
+      background-color: #343a40;
+      padding: 20px 0;
+      color: #fff;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+    .page-header h1 {
+      font-size: 2rem;
+      margin: 0;
+      text-align: center;
+      font-weight: 700;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin-top: 40px;
+      margin-bottom: 40px;
+    }
+
+    .card {
+      border: none;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+      transition: transform 0.3s ease;
+      background-color: #ffffff;
+    }
+
+    .card:hover {
+      transform: translateY(-4px);
+    }
+
+    .card-body {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 15px 20px;
+    }
+
+    .card-body .file-link,
+    .card-body .directory-link-text {
+      color: #495057;
+      font-weight: 500;
+      text-decoration: none;
+    }
+
+    .card-body .file-link:hover,
+    .card-body .directory-link-text:hover {
+      text-decoration: underline;
+    }
+
+    .delete-btn {
+      background-color: #dc3545;
+      color: #fff;
+      font-weight: 600;
+      padding: 6px 12px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      font-size: 0.9rem;
+    }
+
+    .delete-btn:hover {
+      background-color: #a71d2a;
+    }
+
+    #backButton {
+      position: fixed;
+      top: 20px;
+      left: 20px;
+      z-index: 1000;
+      padding: 10px 15px;
+      background-color: #6c757d;
+      color: #fff;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 16px;
+      font-weight: 500;
+    }
+
+    #backButton:hover {
+      background-color: #5a6268;
+    }
+
+    .actions-section {
+      background-color: #fff;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+      padding: 20px;
+      margin-top: 30px;
+    }
+
+    .actions-section h4 {
+      margin-bottom: 20px;
+      font-weight: 600;
+      font-size: 1.3rem;
+    }
+
+    .actions-section label {
+      font-weight: 500;
+    }
+
+    .actions-section .btn-primary {
+      background-color: #007bff;
+      border-color: #007bff;
+      transition: background-color 0.3s ease;
+      font-weight: 600;
+      padding: 8px 16px;
+    }
+
+    .actions-section .btn-primary:hover {
+      background-color: #0056b3;
+    }
+
+    #fileContentModal .modal-content {
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    }
+
+    #fileContentModal .modal-body {
+      background-color: #f8f9fa;
+    }
+
+    #editFileTextarea {
+      width: 100%;
+      min-height: 300px;
+      border-radius: 8px;
+      padding: 10px;
+      font-family: monospace;
+      font-size: 0.9rem;
+      display: none;
+    }
+
+    #changeDirectoryModal .modal-content {
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    }
+
+    #changeDirectoryModal .modal-body {
+      background-color: #fafafa;
+    }
+
+    .directory-item-container img {
+      margin-right: 8px;
+    }
+
+    .directory-item-container {
+      display: flex;
+      align-items: center;
+      padding: 10px;
+      transition: background 0.2s;
+      border-radius: 4px;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .directory-item-container:hover {
+      background-color: #efefef;
+    }
+
+    ::-webkit-scrollbar {
+      width: 10px;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background-color: #cfcfcf;
+      border-radius: 5px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background-color: #f5f5f5;
+    }
+
+    .toast {
+      visibility: visible;
+      opacity: 1;
+    }
+
+    .toast-container {
+      position: fixed;
+      bottom: 1rem;
+      right: 1rem;
+      z-index: 9999;
+    }
+
+    .select2-container .select2-selection--single {
+      height: 38px !important;
+      border-radius: 5px;
+      border: 1px solid #ced4da;
+      padding: 5px 12px;
+    }
+
+    .select2-container--default .select2-selection--single .select2-selection__rendered {
+      line-height: 1.5;
+    }
+
+    .select2-container--default .select2-selection--single .select2-selection__arrow {
+      top: 5px;
+      right: 8px;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="page-header">
+    <h1>Linux Web File Explorer</h1>
+  </div>
+
+  <button id="backButton" class="btn btn-secondary">Back</button>
+
+  <div class="container">
+    <div class="mb-3">
+      <p class="mb-1" style="font-size: 1.1rem;">
+        <strong>Current Directory:</strong> {{ current_directory }}
+      </p>
+      <button
+        class="btn btn-sm btn-outline-primary"
+        id="changeDirBtn"
+        data-bs-toggle="modal"
+        data-bs-target="#changeDirectoryModal"
+      >
+        Change Directory
+      </button>
+    </div>
+
+    <!-- Dosya ve Klasör Listesi -->
+    <div class="row">
+      {% for file in files %}
+      <div class="col-md-4">
+        <div class="card mb-3">
+          <div class="card-body">
+            {% if file.is_dir %}
+              <div>
+                <a
+                  href="/?dir={{ current_directory }}/{{ file.name }}"
+                  class="directory-link-text text-decoration-none"
+                >
+                  <img
+                    src="/static/folder.png"
+                    alt="Folder Icon"
+                    width="24"
+                    height="24"
+                    class="me-2"
+                  />
+                  {{ file.name }} ({{ file.permission }})
+                </a>
+              </div>
+            {% else %}
+              <div>
+                <a
+                  href="#"
+                  class="file-link text-decoration-none"
+                  data-file-path="{{ current_directory }}/{{ file.name }}"
+                >
+                  <i class="bi bi-file-earmark me-2"></i>{{ file.name }} ({{ file.permission }})
+                </a>
+              </div>
+            {% endif %}
+            <button
+              class="delete-btn"
+              data-target="{{ current_directory }}/{{ file.name }}"
+            >
+              <i class="bi bi-trash me-1"></i>Delete
+            </button>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+
+    <!-- Actions (Create File/Dir, Delete, Move, Copy, Chmod) -->
+    <div class="actions-section">
+      <h4>Actions</h4>
+
+      <form id="actionForm" class="row g-3">
+        <div class="col-md-3">
+          <label for="action" class="form-label">Action</label>
+          <select class="form-select" id="action">
+            <option value="create_file">Create File</option>
+            <option value="create_directory">Create Directory</option>
+            <option value="delete">Delete</option>
+            <option value="move">Move</option>
+            <option value="copy">Copy</option>
+            <option value="chmod">Change Permissions</option>
+          </select>
+        </div>
+
+        <!-- Sadece create_file / create_directory için -->
+        <div class="col-md-3" id="targetTextWrapper">
+          <label for="targetText" class="form-label">Target (New)</label>
+          <input
+            type="text"
+            class="form-control"
+            id="targetText"
+            placeholder="Type a new file or folder name"
+          />
+        </div>
+
+        <!-- Sadece delete / move / copy / chmod için -->
+        <div class="col-md-3" id="targetSelectWrapper" style="display: none;">
+          <label for="targetSelect" class="form-label">Target (Existing)</label>
+          <select
+            id="targetSelect"
+            class="form-select"
+            style="width: 100%;"
+          >
+            <option value="">-- Select or type path --</option>
+            {% for file in files %}
+              <option value="{{ current_directory }}/{{ file.name }}">
+                {{ file.name }}
+                {% if file.is_dir %}(DIR){% else %}(FILE){% endif %}
+              </option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <!-- Destination alanı (move/copy durumunda) -->
+        <div class="col-md-3" id="destinationField" style="display: none;">
+          <label for="destination" class="form-label">Destination</label>
+          <input
+            type="text"
+            class="form-control"
+            id="destination"
+            placeholder="Enter folder or path"
+          />
+        </div>
+
+        <!-- Permission alanı (chmod durumunda) -->
+        <div class="col-md-3" id="permissionField" style="display: none;">
+          <label for="permission" class="form-label"
+            >Permission (e.g., 755)</label
+          >
+          <input
+            type="text"
+            class="form-control"
+            id="permission"
+            placeholder="Permission Code"
+          />
+        </div>
+
+        <div class="col-12">
+          <button type="submit" class="btn btn-primary">
+            Submit
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Dosya İçeriği Modal -->
+  <div
+    class="modal fade"
+    id="fileContentModal"
+    tabindex="-1"
+    aria-labelledby="fileContentModalLabel"
+    aria-hidden="true"
+  >
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="fileContentModalLabel">
+            File Content
+          </h5>
+          <button
+            type="button"
+            class="btn-close"
+            data-bs-dismiss="modal"
+            aria-label="Close"
+          ></button>
+        </div>
+        <div class="modal-body">
+          <pre><code id="readOnlyCode" class="hljs"></code></pre>
+          <textarea id="editFileTextarea"></textarea>
+          <div class="mt-3">
+            <button class="btn btn-outline-secondary" id="editBtn">Edit</button>
+            <button class="btn btn-success" id="saveBtn" style="display:none;">Save</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Change Directory Modal -->
+  <div
+    class="modal fade"
+    id="changeDirectoryModal"
+    tabindex="-1"
+    aria-labelledby="changeDirectoryModalLabel"
+    aria-hidden="true"
+  >
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="changeDirectoryModalLabel">
+            Change Directory
+          </h5>
+          <button
+            type="button"
+            class="btn-close"
+            data-bs-dismiss="modal"
+            aria-label="Close"
+          ></button>
+        </div>
+        <div class="modal-body">
+          <!-- Directory Arama/Seçme Alanı -->
+          <div class="input-group mb-3">
+            <input
+              type="text"
+              class="form-control"
+              id="directoryInput"
+              placeholder="Enter directory path (e.g. /home/user)"
+            />
+            <button class="btn btn-secondary" id="goDirectoryBtn">Go</button>
+          </div>
+          <div id="directoryContainer">
+            <!-- İçerik dynamic olarak burada listelenecek -->
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TOAST Container -->
+  <div class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index: 9999;">
+    <div id="liveToast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+      <div class="toast-header">
+        <strong class="me-auto" id="toastTitle">Info</strong>
+        <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+      </div>
+      <div class="toast-body" id="toastBody"></div>
+    </div>
+  </div>
+
+  <!-- Bootstrap JS, Axios, Highlight.js -->
+  <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.7/dist/umd/popper.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/languages/python.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/languages/javascript.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/languages/html.min.js"></script>
+
+  <!-- jQuery + Select2 JS -->
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-beta.1/dist/js/select2.min.js"></script>
+
+  <script>
+    /************************************************************
+     * 0) TOAST GLOBAL
+     ************************************************************/
+    let toastEl, toastTitle, toastBody, bsToast;
+    document.addEventListener("DOMContentLoaded", function() {
+      toastEl = document.getElementById('liveToast');
+      toastTitle = document.getElementById('toastTitle');
+      toastBody = document.getElementById('toastBody');
+      bsToast = new bootstrap.Toast(toastEl, { delay: 5000 });
+
+      $("#targetSelect").select2({
+        placeholder: "-- Select or type path --",
+        allowClear: true
+      });
+    });
+
+    function showToast(title, message) {
+      toastTitle.textContent = title;
+      toastBody.textContent = message;
+      bsToast.show();
+    }
+
+    /************************************************************
+     * 1) PATH UTILS - relative vs absolute
+     ************************************************************/
+    const currentDirectory = "{{ current_directory }}";
+
+    function isAbsolutePath(userPath) {
+      return userPath.startsWith("/");
+    }
+
+    function joinPathIfRelative(currentDir, userPath) {
+      if (!userPath) return "";
+      if (isAbsolutePath(userPath)) {
+        return userPath;
+      }
+      return currentDir + "/" + userPath;
+    }
+
+    /************************************************************
+     * 2) ACTION FORM UI
+     ************************************************************/
+    const actionEl = document.getElementById("action");
+    const targetTextWrapper = document.getElementById("targetTextWrapper");
+    const targetSelectWrapper = document.getElementById("targetSelectWrapper");
+
+    function updateActionUI(action) {
+      targetTextWrapper.style.display = "none";
+      targetSelectWrapper.style.display = "none";
+      document.getElementById("destinationField").style.display = "none";
+      document.getElementById("permissionField").style.display = "none";
+
+      if (action === "create_file" || action === "create_directory") {
+        targetTextWrapper.style.display = "block";
+      } else if (
+        action === "delete" ||
+        action === "move" ||
+        action === "copy" ||
+        action === "chmod"
+      ) {
+        targetSelectWrapper.style.display = "block";
+      }
+
+      if (action === "move" || action === "copy") {
+        document.getElementById("destinationField").style.display = "block";
+      }
+      if (action === "chmod") {
+        document.getElementById("permissionField").style.display = "block";
+      }
+    }
+
+    updateActionUI(actionEl.value);
+    actionEl.addEventListener("change", () => {
+      updateActionUI(actionEl.value);
+    });
+
+    /************************************************************
+     * 3) ACTION FORM SUBMIT
+     ************************************************************/
+    document.getElementById("actionForm").addEventListener("submit", function(e) {
+      e.preventDefault();
+      const action = actionEl.value;
+      const newName = document.getElementById("targetText").value.trim();
+      const selectedTarget = document.getElementById("targetSelect").value.trim();
+      const destinationVal = document.getElementById("destination").value.trim();
+      const permissionVal = document.getElementById("permission").value.trim();
+
+      let finalTarget = "";
+      let finalDestination = "";
+
+      if (action === "create_file" || action === "create_directory") {
+        finalTarget = joinPathIfRelative(currentDirectory, newName);
+      } else {
+        finalTarget = joinPathIfRelative(currentDirectory, selectedTarget);
+      }
+
+      if (action === "move" || action === "copy") {
+        finalDestination = joinPathIfRelative(currentDirectory, destinationVal);
+      }
+
+      axios.post("/api/perform_action", {
+        action,
+        target: finalTarget,
+        destination: finalDestination,
+        permission: permissionVal
+      })
+      .then((response) => {
+        showToast("Success", "Action performed successfully!");
+        setTimeout(()=> location.reload(), 2000);
+      })
+      .catch((error) => {
+        const errMsg = error.response?.data?.error || "An error occurred.";
+
+        if(errMsg.includes("already exists")) {
+          showToast("Error", "Duplicate Error: " + errMsg)
+        }
+        else{
+          showToast("Error", errMsg);
+        }
+      });
+    });
+
+    /************************************************************
+     * 4) DELETE BUTTON
+     ************************************************************/
+    document.querySelectorAll(".delete-btn").forEach((button) => {
+      button.addEventListener("click", function () {
+        const target = this.dataset.target;
+        axios.post("/api/perform_action", { action: "delete", target })
+        .then((response) => {
+          showToast("Success", "File/Folder deleted successfully!");
+          setTimeout(()=> location.reload(), 2000);
+        })
+        .catch((error) => {
+          const errMsg = error.response?.data?.error || "An error occurred.";
+          showToast("Error", errMsg);
+        });
+      });
+    });
+
+    /************************************************************
+     * 5) READ FILE (ve Edit/Save)
+     ************************************************************/
+    let currentOpenedFile = "";
+
+    document.querySelectorAll(".file-link").forEach((fileLink) => {
+      fileLink.addEventListener("click", function (e) {
+        e.preventDefault();
+        currentOpenedFile = this.dataset.filePath;
+
+        axios.post("/api/read_file", { file_path: currentOpenedFile })
+        .then((response) => {
+          if (response.data.success) {
+            const content = response.data.content;
+            const codeElement = document.getElementById("readOnlyCode");
+            codeElement.textContent = content;
+            codeElement.className = "";
+            hljs.highlightElement(codeElement);
+
+            const editArea = document.getElementById("editFileTextarea");
+            editArea.value = content;
+            editArea.style.display = "none";
+
+            document.getElementById("editBtn").style.display = "inline-block";
+            document.getElementById("saveBtn").style.display = "none";
+
+            const fileContentModal = new bootstrap.Modal(
+              document.getElementById("fileContentModal")
+            );
+            fileContentModal.show();
+          } else {
+            const errMsg = response.data.error || "Unknown error";
+            showToast("Error", errMsg);
+          }
+        })
+        .catch((error) => {
+          const errMsg = error.response?.data?.error || "An error occurred.";
+          showToast("Error", errMsg);
+        });
+      });
+    });
+
+    document.getElementById("editBtn").addEventListener("click", function() {
+      document.getElementById("readOnlyCode").style.display = "none";
+      document.getElementById("editFileTextarea").style.display = "block";
+      this.style.display = "none";
+      document.getElementById("saveBtn").style.display = "inline-block";
+    });
+
+    document.getElementById("saveBtn").addEventListener("click", function() {
+      const newContent = document.getElementById("editFileTextarea").value;
+      axios.post("/api/save_file", {
+        file_path: currentOpenedFile,
+        new_content: newContent
+      })
+      .then((resp) => {
+        if (resp.data.success) {
+          showToast("Success", "File saved successfully!");
+          const fileContentModal = bootstrap.Modal.getInstance(
+            document.getElementById("fileContentModal")
+          );
+          fileContentModal.hide();
+        } else {
+          const errMsg = resp.data.error || "An unknown error occurred.";
+          showToast("Error", errMsg);
+        }
+      })
+      .catch((error) => {
+        const errMsg = error.response?.data?.error || "An error occurred.";
+        showToast("Error", errMsg);
+      });
+    });
+
+    /************************************************************
+     * 6) BACK BUTTON
+     ************************************************************/
+    document.getElementById("backButton").addEventListener("click", function () {
+      if (window.history.length > 1) {
+        window.history.back();
+      } else {
+        showToast("Info", "No more history available!");
+      }
+    });
+
+    /************************************************************
+     * 7) CHANGE DIRECTORY MODAL (Load Directory, Navigate, Go, Back)
+     ************************************************************/
+    function loadDirectory(directory) {
+      axios.post("/api/list_directory", { directory })
+      .then((response) => {
+        if (response.data.success) {
+          const items = response.data.items;
+          const currentDir = response.data.current_directory;
+          const container = document.getElementById("directoryContainer");
+
+          function getParentDir(path) {
+            if (path === "/" || path === "") return "/";
+            let parts = path.split("/").filter(Boolean);
+            parts.pop();
+            return parts.length ? "/" + parts.join("/") : "/";
+          }
+
+          container.innerHTML = `
+            <div class="d-flex align-items-center justify-content-between mb-2">
+              <div>
+                <strong>Current Directory:</strong>
+                <span id="modalCurrentDir">${currentDir}</span>
+              </div>
+              <div>
+                <button class="btn btn-secondary btn-sm me-1" id="modalBackBtn">Back</button>
+                <button class="btn btn-primary btn-sm" id="selectDirectoryBtn">Go</button>
+              </div>
+            </div>
+            <div class="row" id="directoryItemsRow"></div>
+          `;
+
+          document.getElementById("modalBackBtn").addEventListener("click", () => {
+            const parent = getParentDir(currentDir);
+            loadDirectory(parent);
+          });
+
+          container.querySelector("#selectDirectoryBtn").addEventListener("click", () => {
+            window.location.href = "/?dir=" + currentDir;
+          });
+
+          const rowDiv = document.getElementById("directoryItemsRow");
+
+          items.forEach((item) => {
+            const colDiv = document.createElement("div");
+            colDiv.classList.add(
+              "col-md-3",
+              "col-sm-4",
+              "col-6",
+              "mb-3",
+              "directory-item-container"
+            );
+
+            if (item.is_dir) {
+              colDiv.innerHTML = `
+                <img
+                  src="/static/folder.png"
+                  width="24"
+                  height="24"
+                  alt="Folder Icon"
+                />
+                <span>${item.name}</span>
+              `;
+              colDiv.addEventListener("click", () => {
+                loadDirectory(`${currentDir}/${item.name}`);
+              });
+            } else {
+              colDiv.innerHTML = `
+                <i class="bi bi-file-earmark me-2"></i>
+                <span>${item.name}</span>
+              `;
+            }
+            rowDiv.appendChild(colDiv);
+          });
+        } else {
+          const errMsg = response.data.error || "Error loading directory.";
+          showToast("Error", errMsg);
+        }
+      })
+      .catch((error) => {
+        const errMsg = error.response?.data?.error || "An error occurred.";
+        showToast("Error", errMsg);
+      });
+    }
+
+    document.getElementById("changeDirectoryModal").addEventListener("show.bs.modal", function () {
+      loadDirectory("/");
+    });
+
+    document.getElementById("goDirectoryBtn").addEventListener("click", function () {
+      const dirInput = document.getElementById("directoryInput").value.trim();
+      if (dirInput) {
+        loadDirectory(dirInput);
+      }
+    });
+  </script>
+</body>
+</html>
